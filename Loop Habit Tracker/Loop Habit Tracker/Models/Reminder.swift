@@ -34,4 +34,24 @@ final class Reminder {
         self.enabled = enabled
         self.habit = habit
     }
+
+    func timeDate(using calendar: Calendar = Calendar.current) -> Date {
+        let components = calendar.dateComponents([.year, .month, .day], from: Date())
+        return calendar.date(
+            from: DateComponents(
+                year: components.year,
+                month: components.month,
+                day: components.day,
+                hour: hour,
+                minute: minute
+            )
+        ) ?? Date()
+    }
+
+    func weekdaySet() -> Set<Int> {
+        guard weekdayMask > 0 else { return [] }
+        return Set((1...7).filter { day in
+            weekdayMask & (1 << (day - 1)) != 0
+        })
+    }
 }

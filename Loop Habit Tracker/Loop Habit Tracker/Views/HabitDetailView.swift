@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HabitDetailView: View {
     let habit: Habit
+    @State private var showingEditor = false
 
     var body: some View {
         List {
@@ -34,6 +35,16 @@ struct HabitDetailView: View {
             }
         }
         .navigationTitle("Habit")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Edit") {
+                    showingEditor = true
+                }
+            }
+        }
+        .sheet(isPresented: $showingEditor) {
+            HabitEditorView(habit: habit)
+        }
     }
 
     private var frequencyText: String {

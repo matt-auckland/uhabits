@@ -12,19 +12,39 @@ struct HabitEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @State private var name = ""
-    @State private var question = ""
-    @State private var notes = ""
-    @State private var habitType: HabitType = .yesNo
-    @State private var unit = ""
-    @State private var targetType: TargetType = .atLeast
-    @State private var targetValue = ""
-    @State private var frequencyNumerator = 1
-    @State private var frequencyDenominator = 1
-    @State private var colorIndex = 0
-    @State private var hasReminder = false
-    @State private var reminderTime = Date()
-    @State private var selectedWeekdays: Set<Int> = Set(1...7)
+    private let habit: Habit?
+
+    @State private var name: String
+    @State private var question: String
+    @State private var notes: String
+    @State private var habitType: HabitType
+    @State private var unit: String
+    @State private var targetType: TargetType
+    @State private var targetValue: String
+    @State private var frequencyNumerator: Int
+    @State private var frequencyDenominator: Int
+    @State private var colorIndex: Int
+    @State private var hasReminder: Bool
+    @State private var reminderTime: Date
+    @State private var selectedWeekdays: Set<Int>
+
+    init(habit: Habit? = nil) {
+        self.habit = habit
+        _name = State(initialValue: habit?.name ?? "")
+        _question = State(initialValue: habit?.question ?? "")
+        _notes = State(initialValue: habit?.notes ?? "")
+        _habitType = State(initialValue: habit?.type ?? .yesNo)
+        _unit = State(initialValue: habit?.unit ?? "")
+        _targetType = State(initialValue: habit?.targetType ?? .atLeast)
+        let targetValue = habit?.targetValue ?? 0
+        _targetValue = State(initialValue: targetValue == 0 ? "" : String(targetValue))
+        _frequencyNumerator = State(initialValue: habit?.frequencyNumerator ?? 1)
+        _frequencyDenominator = State(initialValue: habit?.frequencyDenominator ?? 1)
+        _colorIndex = State(initialValue: habit?.color ?? 0)
+        _hasReminder = State(initialValue: habit?.reminder != nil)
+        _reminderTime = State(initialValue: habit?.reminder?.timeDate() ?? Date())
+        _selectedWeekdays = State(initialValue: habit?.reminder?.weekdaySet() ?? Set(1...7))
+    }
 
     private let palette: [Color] = [
         .red, .orange, .yellow, .green, .mint, .teal,
@@ -92,7 +112,7 @@ struct HabitEditorView: View {
                     }
                 }
             }
-            .navigationTitle("New Habit")
+            .navigationTitle(habit == nil ? "New Habit" : "Edit Habit")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -111,30 +131,39 @@ struct HabitEditorView: View {
 
     private func saveHabit() {
         let parsedTarget = Double(targetValue.replacingOccurrences(of: ",", with: ".")) ?? 0
-        let habit = Habit(
-            name: name.trimmingCharacters(in: .whitespacesAndNewlines),
-            question: question,
-            notes: notes,
-            type: habitType,
-            color: colorIndex,
-            unit: unit,
-            targetType: targetType,
-            targetValue: parsedTarget,
-            frequencyNumerator: frequencyNumerator,
-            frequencyDenominator: frequencyDenominator
-        )
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let targetHabit = habit ?? Habit(name: trimmedName)
+        targetHabit.name = trimmedName
+        targetHabit.question = question
+        targetHabit.notes = notes
+        targetHabit.type = habitType
+        targetHabit.color = colorIndex
+        targetHabit.unit = unit
+        targetHabit.targetType = targetType
+        targetHabit.targetValue = parsedTarget
+        targetHabit.frequencyNumerator = frequencyNumerator
+        targetHabit.frequencyDenominator = frequencyDenominator
         if hasReminder {
             let components = Calendar.current.dateComponents([.hour, .minute], from: reminderTime)
-            let reminder = Reminder(
+            let reminder = targetHabit.reminder ?? Reminder(
                 hour: components.hour ?? 9,
                 minute: components.minute ?? 0,
                 weekdayMask: weekdayMask(from: selectedWeekdays),
                 enabled: true,
-                habit: habit
+                habit: targetHabit
             )
-            habit.reminder = reminder
+            reminder.hour = components.hour ?? reminder.hour
+            reminder.minute = components.minute ?? reminder.minute
+            reminder.weekdayMask = weekdayMask(from: selectedWeekdays)
+            reminder.enabled = true
+            reminder.habit = targetHabit
+            targetHabit.reminder = reminder
+        } else {
+            targetHabit.reminder = nil
         }
-        modelContext.insert(habit)
+        if habit == nil {
+            modelContext.insert(targetHabit)
+        }
         dismiss()
     }
 
