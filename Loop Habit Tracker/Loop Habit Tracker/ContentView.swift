@@ -10,46 +10,53 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Query(sort: \Habit.createdAt, order: .forward) private var habits: [Habit]
+    @State private var showingEditor = false
 
     var body: some View {
-        NavigationSplitView {
+        NavigationStack {
             List {
-                ForEach(items) { item in
+                ForEach(habits) { habit in
                     NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
+                        HabitDetailView(habit: habit)
                     } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+                        HabitRowView(habit: habit)
                     }
                 }
-                .onDelete(perform: deleteItems)
+                .onDelete(perform: deleteHabits)
             }
+            .navigationTitle("Habits")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     EditButton()
                 }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingEditor = true
+                    } label: {
+                        Label("Add Habit", systemImage: "plus")
                     }
                 }
             }
-        } detail: {
-            Text("Select an item")
+            .overlay {
+                if habits.isEmpty {
+                    ContentUnavailableView(
+                        "No habits yet",
+                        systemImage: "checkmark.circle",
+                        description: Text("Tap + to create your first habit.")
+                    )
+                }
+            }
+        }
+        .sheet(isPresented: $showingEditor) {
+            HabitEditorView()
         }
     }
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
+    private func deleteHabits(offsets: IndexSet) {
         withAnimation {
             for index in offsets {
-                modelContext.delete(items[index])
+                modelContext.delete(habits[index])
             }
         }
     }
@@ -57,5 +64,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: Habit.self, inMemory: true)
 }
