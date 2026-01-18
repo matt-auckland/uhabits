@@ -20,6 +20,10 @@ struct HabitDetailView: View {
                 LabeledContent("Schedule", value: frequencyText)
             }
 
+            Section("History") {
+                HabitHistoryCalendarView(referenceDate: Date())
+            }
+
             Section("Notes") {
                 if habit.notes.isEmpty {
                     Text("No notes yet.")
