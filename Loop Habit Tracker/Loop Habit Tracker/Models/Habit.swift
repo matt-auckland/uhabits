@@ -24,10 +24,8 @@ final class Habit {
     var createdAt: Date
     var archivedAt: Date?
 
-    @Relationship(deleteRule: .cascade, inverse: \Reminder.habit)
     var reminder: Reminder?
 
-    @Relationship(deleteRule: .cascade, inverse: \Repetition.habit)
     var repetitions: [Repetition]
 
     init(

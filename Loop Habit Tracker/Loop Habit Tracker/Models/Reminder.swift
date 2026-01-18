@@ -16,7 +16,6 @@ final class Reminder {
     var weekdayMask: Int
     var enabled: Bool
 
-    @Relationship(inverse: \Habit.reminder)
     var habit: Habit?
 
     init(

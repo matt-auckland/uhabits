@@ -15,7 +15,6 @@ final class Repetition {
     var value: Double?
     var notes: String?
 
-    @Relationship(inverse: \Habit.repetitions)
     var habit: Habit?
 
     init(
