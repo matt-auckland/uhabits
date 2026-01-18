@@ -21,6 +21,10 @@ struct HabitDetailView: View {
                 LabeledContent("Schedule", value: frequencyText)
             }
 
+            Section("Stats") {
+                LabeledContent("Current streak", value: "\(habit.currentStreak()) days")
+            }
+
             Section("History") {
                 HabitHistoryCalendarView(habit: habit, referenceDate: Date())
             }

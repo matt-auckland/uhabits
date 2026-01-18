@@ -61,4 +61,21 @@ final class Habit {
         self.reminder = reminder
         self.repetitions = repetitions
     }
+
+    func currentStreak(referenceDate: Date = Date(), calendar: Calendar = Calendar.current) -> Int {
+        var streak = 0
+        var date = calendar.startOfDay(for: referenceDate)
+        let completedDates = Set(repetitions.compactMap { repetition in
+            guard let value = repetition.value ?? (type == .yesNo ? 1 : nil) else { return nil }
+            return value > 0 ? calendar.startOfDay(for: repetition.timestamp) : nil
+        })
+        while completedDates.contains(date) {
+            streak += 1
+            guard let previous = calendar.date(byAdding: .day, value: -1, to: date) else {
+                break
+            }
+            date = previous
+        }
+        return streak
+    }
 }
