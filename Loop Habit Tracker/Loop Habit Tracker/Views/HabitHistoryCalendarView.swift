@@ -10,6 +10,8 @@ import SwiftData
 
 struct HabitHistoryCalendarView: View {
     @Environment(\.modelContext) private var modelContext
+    @State private var showingEntrySheet = false
+    @State private var selectedDate: Date?
 
     let habit: Habit
     let referenceDate: Date
@@ -36,12 +38,27 @@ struct HabitHistoryCalendarView: View {
                         .background(background(for: day))
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                         .onTapGesture {
-                            toggleRepetition(for: day)
+                            handleSelection(for: day)
                         }
                 }
             }
         }
         .padding(.vertical, 4)
+        .sheet(isPresented: $showingEntrySheet) {
+            if let date = selectedDate {
+                NumericalEntrySheet(
+                    habit: habit,
+                    date: date,
+                    existingRepetition: repetition(for: date),
+                    onSave: { value, notes in
+                        saveNumericalRepetition(for: date, value: value, notes: notes)
+                    },
+                    onDelete: {
+                        deleteRepetition(for: date)
+                    }
+                )
+            }
+        }
     }
 
     private var calendar: Calendar {
@@ -84,7 +101,10 @@ struct HabitHistoryCalendarView: View {
     private func background(for day: Int?) -> Color {
         guard let day else { return .clear }
         let date = dateForDay(day)
-        if repetition(for: date) != nil {
+        if let repetition = repetition(for: date) {
+            if habit.type == .numerical {
+                return repetition.value == nil ? Color.accentColor.opacity(0.1) : Color.accentColor.opacity(0.25)
+            }
             return Color.accentColor.opacity(0.25)
         }
         let isToday = calendar.isDate(referenceDate, equalTo: date, toGranularity: .day)
@@ -96,15 +116,41 @@ struct HabitHistoryCalendarView: View {
         return calendar.date(from: DateComponents(year: components.year, month: components.month, day: day)) ?? referenceDate
     }
 
-    private func toggleRepetition(for day: Int?) {
+    private func handleSelection(for day: Int?) {
         guard let day else { return }
         let date = dateForDay(day)
+        if habit.type == .numerical {
+            selectedDate = date
+            showingEntrySheet = true
+            return
+        }
+        toggleBooleanRepetition(for: date)
+    }
+
+    private func toggleBooleanRepetition(for date: Date) {
         if let repetition = repetition(for: date) {
             modelContext.delete(repetition)
         } else {
-            let repetition = Repetition(timestamp: date, habit: habit)
+            let repetition = Repetition(timestamp: date, habit: habit, value: 1)
             habit.repetitions.append(repetition)
             modelContext.insert(repetition)
+        }
+    }
+
+    private func saveNumericalRepetition(for date: Date, value: Double, notes: String?) {
+        if let repetition = repetition(for: date) {
+            repetition.value = value
+            repetition.notes = notes
+        } else {
+            let repetition = Repetition(timestamp: date, value: value, notes: notes, habit: habit)
+            habit.repetitions.append(repetition)
+            modelContext.insert(repetition)
+        }
+    }
+
+    private func deleteRepetition(for date: Date) {
+        if let repetition = repetition(for: date) {
+            modelContext.delete(repetition)
         }
     }
 
