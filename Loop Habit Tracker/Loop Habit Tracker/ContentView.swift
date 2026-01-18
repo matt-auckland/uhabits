@@ -11,6 +11,7 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Habit.createdAt, order: .forward) private var habits: [Habit]
+    @State private var showingEditor = false
 
     var body: some View {
         NavigationStack {
@@ -30,7 +31,9 @@ struct ContentView: View {
                     EditButton()
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: addHabit) {
+                    Button {
+                        showingEditor = true
+                    } label: {
                         Label("Add Habit", systemImage: "plus")
                     }
                 }
@@ -45,12 +48,8 @@ struct ContentView: View {
                 }
             }
         }
-    }
-
-    private func addHabit() {
-        withAnimation {
-            let habit = Habit(name: "New Habit")
-            modelContext.insert(habit)
+        .sheet(isPresented: $showingEditor) {
+            HabitEditorView()
         }
     }
 
