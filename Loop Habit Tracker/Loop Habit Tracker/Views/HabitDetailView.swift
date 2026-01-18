@@ -22,7 +22,7 @@ struct HabitDetailView: View {
             }
 
             Section("History") {
-                HabitHistoryCalendarView(referenceDate: Date())
+                HabitHistoryCalendarView(habit: habit, referenceDate: Date())
             }
 
             Section("Notes") {

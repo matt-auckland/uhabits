@@ -6,8 +6,12 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct HabitHistoryCalendarView: View {
+    @Environment(\.modelContext) private var modelContext
+
+    let habit: Habit
     let referenceDate: Date
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 7)
@@ -31,6 +35,9 @@ struct HabitHistoryCalendarView: View {
                         .frame(maxWidth: .infinity, minHeight: 28)
                         .background(background(for: day))
                         .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .onTapGesture {
+                            toggleRepetition(for: day)
+                        }
                 }
             }
         }
@@ -76,17 +83,39 @@ struct HabitHistoryCalendarView: View {
 
     private func background(for day: Int?) -> Color {
         guard let day else { return .clear }
-        let isToday = calendar.isDate(referenceDate, equalTo: dateForDay(day), toGranularity: .day)
-        return isToday ? Color.accentColor.opacity(0.2) : Color.clear
+        let date = dateForDay(day)
+        if repetition(for: date) != nil {
+            return Color.accentColor.opacity(0.25)
+        }
+        let isToday = calendar.isDate(referenceDate, equalTo: date, toGranularity: .day)
+        return isToday ? Color.secondary.opacity(0.1) : Color.clear
     }
 
     private func dateForDay(_ day: Int) -> Date {
         let components = calendar.dateComponents([.year, .month], from: referenceDate)
         return calendar.date(from: DateComponents(year: components.year, month: components.month, day: day)) ?? referenceDate
     }
+
+    private func toggleRepetition(for day: Int?) {
+        guard let day else { return }
+        let date = dateForDay(day)
+        if let repetition = repetition(for: date) {
+            modelContext.delete(repetition)
+        } else {
+            let repetition = Repetition(timestamp: date, habit: habit)
+            habit.repetitions.append(repetition)
+            modelContext.insert(repetition)
+        }
+    }
+
+    private func repetition(for date: Date) -> Repetition? {
+        habit.repetitions.first { repetition in
+            calendar.isDate(repetition.timestamp, equalTo: date, toGranularity: .day)
+        }
+    }
 }
 
 #Preview {
-    HabitHistoryCalendarView(referenceDate: Date())
+    HabitHistoryCalendarView(habit: Habit(name: "Meditate"), referenceDate: Date())
         .padding()
 }
