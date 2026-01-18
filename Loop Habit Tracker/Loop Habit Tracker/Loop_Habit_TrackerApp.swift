@@ -12,7 +12,9 @@ import SwiftData
 struct Loop_Habit_TrackerApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Habit.self,
+            Reminder.self,
+            Repetition.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
