@@ -54,7 +54,7 @@ This document defines the initial iOS MVP feature scope for the Loop Habit Track
 **Scope**
 - Theme: light/dark.
 - Reminder permissions.
-- Export (CSV) basic flow if feasible.
+- Export (CSV) basic flow.
 
 ### 6) Onboarding
 
@@ -73,7 +73,7 @@ This document defines the initial iOS MVP feature scope for the Loop Habit Track
 - High effort, better suited after MVP stability.
 
 ### Data Export / Import
-- SQLite file export, full import, backup/restore UI.
+- Full import and advanced backup/restore UI (beyond CSV).
 - Advanced sharing integrations.
 
 ### Advanced Automation
@@ -93,7 +93,6 @@ This document defines the initial iOS MVP feature scope for the Loop Habit Track
 
 ## Open Questions
 
-- Should iOS use Core Data or SQLite for persistence?
-- What is the minimum acceptable history UI (calendar vs list) for MVP?
-- Should CSV export be in MVP or deferred?
-
+- Use **SwiftData** for persistence.
+- History UI: **calendar** (minimum acceptable for MVP).
+- CSV export is included in MVP.
