@@ -16,9 +16,15 @@ struct HabitEditorView: View {
     @State private var question = ""
     @State private var notes = ""
     @State private var habitType: HabitType = .yesNo
+    @State private var unit = ""
+    @State private var targetType: TargetType = .atLeast
+    @State private var targetValue = ""
     @State private var frequencyNumerator = 1
     @State private var frequencyDenominator = 1
     @State private var colorIndex = 0
+    @State private var hasReminder = false
+    @State private var reminderTime = Date()
+    @State private var selectedWeekdays: Set<Int> = Set(1...7)
 
     private let palette: [Color] = [
         .red, .orange, .yellow, .green, .mint, .teal,
@@ -41,6 +47,16 @@ struct HabitEditorView: View {
                         Text("Numerical").tag(HabitType.numerical)
                     }
                     .pickerStyle(.segmented)
+
+                    if habitType == .numerical {
+                        TextField("Unit (e.g. minutes)", text: $unit)
+                        Picker("Target", selection: $targetType) {
+                            Text("At least").tag(TargetType.atLeast)
+                            Text("At most").tag(TargetType.atMost)
+                        }
+                        TextField("Target value", text: $targetValue)
+                            .keyboardType(.decimalPad)
+                    }
                 }
 
                 Section("Schedule") {
@@ -67,6 +83,14 @@ struct HabitEditorView: View {
                         .padding(.vertical, 4)
                     }
                 }
+
+                Section("Reminder") {
+                    Toggle("Enable reminder", isOn: $hasReminder)
+                    if hasReminder {
+                        DatePicker("Time", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                        WeekdayPickerView(selectedWeekdays: $selectedWeekdays)
+                    }
+                }
             }
             .navigationTitle("New Habit")
             .toolbar {
@@ -86,17 +110,38 @@ struct HabitEditorView: View {
     }
 
     private func saveHabit() {
+        let parsedTarget = Double(targetValue.replacingOccurrences(of: ",", with: ".")) ?? 0
         let habit = Habit(
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             question: question,
             notes: notes,
             type: habitType,
             color: colorIndex,
+            unit: unit,
+            targetType: targetType,
+            targetValue: parsedTarget,
             frequencyNumerator: frequencyNumerator,
             frequencyDenominator: frequencyDenominator
         )
+        if hasReminder {
+            let components = Calendar.current.dateComponents([.hour, .minute], from: reminderTime)
+            let reminder = Reminder(
+                hour: components.hour ?? 9,
+                minute: components.minute ?? 0,
+                weekdayMask: weekdayMask(from: selectedWeekdays),
+                enabled: true,
+                habit: habit
+            )
+            habit.reminder = reminder
+        }
         modelContext.insert(habit)
         dismiss()
+    }
+
+    private func weekdayMask(from weekdays: Set<Int>) -> Int {
+        weekdays.reduce(0) { mask, day in
+            mask | (1 << (day - 1))
+        }
     }
 }
 
